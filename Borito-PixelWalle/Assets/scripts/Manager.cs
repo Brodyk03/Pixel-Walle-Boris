@@ -9,7 +9,7 @@ public class Manager : MonoBehaviour
     public static Lienzo lienzo;
 
     public List<Material> Materials;
-    public Canvas canvas;
+    Canvas canvas;
     public GameObject pincelPrefab;
     public GameObject pixel;
     
@@ -173,9 +173,16 @@ public class Manager : MonoBehaviour
     void Awake()
     {
         materials = Materials;
-        lienzo = ScriptableObject.CreateInstance<Lienzo>();
-        lienzo.Constructor(pixel, canvas);
-        pincel = Instantiate(pincelPrefab).GetComponent<Pincel>();
+        // canvas = this.gameObject.GetComponent<Canvas>();
+        // if (canvas is null)
+        // {
+        //     Debug.LogError("No se ha encontrado el componente Canvas en el GameObject Manager.");
+        //     return;
+        // }
+        // lienzo = ScriptableObject.CreateInstance<Lienzo>();
+        // lienzo.Constructor(pixel, canvas);
+        // lienzo.Crear_lienzo(900, 1600);
+        // pincel = Instantiate(pincelPrefab,canvas.transform).GetComponent<Pincel>();
     }
 
     // Update is called once per frame
@@ -201,13 +208,16 @@ public class Lienzo : ScriptableObject
     }
     public void Crear_lienzo(int i, int j)
     {
-        foreach (var pixel in imagen) Destroy(pixel.gameObject);
+        if (!(imagen is null))
+        {
+            foreach (var pixel in imagen) Destroy(pixel.gameObject);
+        }
         imagen = new Pixel[i, j];
         Vector2 tamano_canvas = canvas.GetComponent<RectTransform>().sizeDelta;
         float tamano_pixel;
 
-        if (tamano_canvas.x / tamano_canvas.y > i / j) tamano_pixel = tamano_canvas.x / i;
-        else tamano_pixel = tamano_canvas.y / j;
+        if (tamano_canvas.x / tamano_canvas.y > j / i) tamano_pixel = tamano_canvas.x / j;
+        else tamano_pixel = tamano_canvas.y / i;
 
         Vector3 pos_esquina = new Vector3(-tamano_canvas.x / 2 + tamano_pixel / 2, -tamano_canvas.y / 2 + tamano_pixel / 2);
 
@@ -215,7 +225,7 @@ public class Lienzo : ScriptableObject
         {
             for (int y = 0; y < j; y++)
             {
-                var pixelGameObject = Instantiate(pixel, pos_esquina + new Vector3(x * tamano_pixel, y * tamano_pixel, 0), Quaternion.identity, parent: canvas.transform);
+                var pixelGameObject = Instantiate(pixel, pos_esquina + new Vector3(y * tamano_pixel, x * tamano_pixel, 0), Quaternion.identity, parent: canvas.transform);
                 // Cambiar el tamaño del GameObject pixel (UI)
                 RectTransform rt = pixelGameObject.GetComponent<RectTransform>();
                 if (rt != null)

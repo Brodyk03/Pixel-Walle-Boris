@@ -2,42 +2,51 @@ using UnityEngine;
 using System.Collections.Generic;
 using SFB;
 using TMPro;
-using System.Linq;
 using System;
 using System.IO;
 
 public class Funciones_de_botones : MonoBehaviour
 {
+    public string[] archivoImportado;
+    public List<GameObject> textos;
 
-    public static string[] ArchivoImportado;
-    public List<GameObject> Textos;
+    // Alterna la visibilidad del input
     public void Input()
     {
-        if (!Textos[0].activeSelf) Textos[0].SetActive(true);
-        else Textos[0].SetActive(false);
+        if (textos.Count > 0)
+            textos[0].SetActive(!textos[0].activeSelf);
     }
+
+    // Alterna la visibilidad de la consola
     public void Consola()
     {
-        if (!Textos[1].activeSelf) Textos[1].SetActive(true);
-        else Textos[1].SetActive(false);
+        if (textos.Count > 1)
+            textos[1].SetActive(!textos[1].activeSelf);
     }
+
+    // Importa un archivo y lo muestra en el input
     public void Importar()
     {
         string[] paths = StandaloneFileBrowser.OpenFilePanel("Abrir archivo", "", "", false);
-        ArchivoImportado = paths;
-        string archivo= "";
-        foreach (var linea in ArchivoImportado)
+        if (paths.Length == 0) return;
+
+        archivoImportado = paths;
+        string archivo = string.Join("", archivoImportado);
+
+        if (textos.Count > 0)
         {
-            archivo=String.Concat(archivo,linea);
+            var inputField = textos[0].GetComponent<TMP_InputField>();
+            inputField.text += "\n\n" + archivo;
         }
-        Textos[0].GetComponent<TMP_InputField>().text = Textos[0].GetComponent<TMP_InputField>().text
-        + "/n/n" +archivo;
     }
+
+    // Exporta el contenido del input a un archivo
     public void Exportar()
     {
-        string ruta = Application.persistentDataPath + "/Archivo_exportado.txt";
-        string contenido = Textos[0].GetComponent<TMP_InputField>().text;
+        if (textos.Count == 0) return;
 
+        string ruta = Application.persistentDataPath + "/Archivo_exportado.txt";
+        string contenido = textos[0].GetComponent<TMP_InputField>().text;
         File.WriteAllText(ruta, contenido);
     }
 }

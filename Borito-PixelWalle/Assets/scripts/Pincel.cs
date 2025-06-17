@@ -189,7 +189,10 @@ public class Pincel : MonoBehaviour
     }
     void Start()
     {
-        pincels.Add(new List<Pincel>() { this });
+        pincels = new List<List<Pincel>>
+        {
+            new List<Pincel>() { this }
+        };
         material = this.gameObject.GetComponent<Renderer>().material;
         resolution = 1;
         Pos_tablero = (0, 0);

@@ -21,7 +21,7 @@ public class Pincel : MonoBehaviour
         get => color;
         set
         {
-            int i=10;
+            int i = 10;
             switch (value)
             {
                 case Manager.color.Red:
@@ -51,12 +51,12 @@ public class Pincel : MonoBehaviour
                 case Manager.color.Transparent:
                     i = 8;
                     break;
-                
-                
+
+
                 default:
                     break;
             }
-            
+
             var renderer = this.transform.GetChild(0).gameObject.GetComponent<Renderer>();
             if (renderer != null && Manager.materials != null && Manager.materials.Count > 0 && i < Manager.materials.Count)
             {
@@ -64,6 +64,8 @@ public class Pincel : MonoBehaviour
                 material = Manager.materials[i];
             }
             color = value;
+            foreach (var lista in pincels)foreach (var pincel in lista)
+                    if(pincel!=this)pincel.color = value;
         }
     }
     public (int, int) Pos_tablero
@@ -71,8 +73,24 @@ public class Pincel : MonoBehaviour
         get => pos_tablero;
         set
         {
-            this.gameObject.transform.position = Manager.lienzo[value.Item1, value.Item2].gameObject.transform.position+new Vector3(0f,0f,0.1f);
             pos_tablero = value;
+            transform.SetParent(pixel.gameObject.transform);
+            transform.localPosition = new Vector2(0f, 0f);
+            transform.localScale = new Vector2(1f, 1f);
+            int pixelIndex = pixel.transform.GetSiblingIndex();
+            transform.SetSiblingIndex(pixelIndex + 1);
+            this.transform.GetChild(0).gameObject.transform.SetSiblingIndex(pixelIndex + 2);
+            for (int i = 0; i < pincels.Count; i++)
+            {
+                for (int j = 0; j < pincels[i].Count; j++)
+                {
+                    if (i != 0 && j != 0)
+                    {
+                        pincels[i][j].Pos_tablero = (i + value.Item1, j + value.Item2);
+                    }
+                }
+            }
+            // transform.localPosition = Manager.lienzo[value.Item1, value.Item2].gameObject.transform.localPosition+new Vector3(0f,0f,0.1f);
         }
     }
 
@@ -82,14 +100,14 @@ public class Pincel : MonoBehaviour
         {
             for (int i = 0; i < pincels.Count; i++)
             {
-                pincels[i].Add(Instantiate(this.gameObject).GetComponent<Pincel>());/*Manager.lienzo[Pos_tablero.Item1,Pos_tablero.Item2+pincels.Count]*/
+                pincels[i].Add(Instantiate(this.transform.parent).GetComponent<Pincel>());/*Manager.lienzo[Pos_tablero.Item1,Pos_tablero.Item2+pincels.Count]*/
                 pincels[i][pincels.Count - 1].pos_tablero = (Pos_tablero.Item1, Pos_tablero.Item2 + pincels.Count);
                 pincels[i][pincels.Count - 1].color = color;
             }
             pincels.Add(new List<Pincel>());
             for (int i = 0; i < pincels[0].Count; i++)
             {
-                pincels[pincels.Count - 1].Add(Instantiate(this.gameObject).GetComponent<Pincel>());
+                pincels[pincels.Count - 1].Add(Instantiate(this.transform.parent).GetComponent<Pincel>());
                 pincels[pincels.Count - 1][i].pos_tablero = (Pos_tablero.Item1 + pincels.Count, Pos_tablero.Item2);
                 pincels[pincels.Count - 1][i].color = color;
             }
@@ -166,7 +184,7 @@ public class Pincel : MonoBehaviour
 
         if (pixel != null)
         {
-            if (pixel.color!=Manager.color.Transparent)
+            if (this.color!=Manager.color.Transparent)
             {
                 pixel.color = this.Color;
                 pixel.gameObject.GetComponent<Renderer>().material = material;

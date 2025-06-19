@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Manager : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class Manager : MonoBehaviour
     Canvas canvas;
     public GameObject pincelPrefab;
     public GameObject pixel;
+    public GameObject Linea;
     
     public enum color { Red, Blue, Green, Yellow, Orange, Purple, Black, White, Transparent }
     static List<(int, int)> direcciones = new List<(int,int)>{ (0, 1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1) };
@@ -19,16 +21,16 @@ public class Manager : MonoBehaviour
     public static void Spawn(int x, int y)
     {
         pincel.Pos_tablero = (x, y);
-        for (int i = 0; i < pincel.pincels.Count; i++)
-        {
-            for (int j = 0; j < pincel.pincels[i].Count; j++)
-            {
-                if (i != 0 && j != 0)
-                {
-                    pincel.pincels[i][j].Pos_tablero = (x + i, y + j);
-                }
-            }
-        }
+        // for (int i = 0; i < pincel.pincels.Count; i++)
+        // {
+        //     for (int j = 0; j < pincel.pincels[i].Count; j++)
+        //     {
+        //         if (i != 0 && j != 0)
+        //         {
+        //             pincel.pincels[i][j].Pos_tablero = (x + i, y + j);
+        //         }
+        //     }
+        // }
     }
     public static void Color(string color){pincel.Cambiar_color(color);}
     public static void Size(int k) {pincel.Cambiar_resolucion(k);}
@@ -173,16 +175,16 @@ public class Manager : MonoBehaviour
     void Awake()
     {
         materials = Materials;
-        // canvas = this.gameObject.GetComponent<Canvas>();
-        // if (canvas is null)
-        // {
-        //     Debug.LogError("No se ha encontrado el componente Canvas en el GameObject Manager.");
-        //     return;
-        // }
-        // lienzo = ScriptableObject.CreateInstance<Lienzo>();
-        // lienzo.Constructor(pixel, canvas);
-        // lienzo.Crear_lienzo(900, 1600);
-        // pincel = Instantiate(pincelPrefab,canvas.transform).GetComponent<Pincel>();
+        canvas = GetComponent<Canvas>();
+        if (canvas is null)
+        {
+            Debug.LogError("No se ha encontrado el componente Canvas en el GameObject Manager.");
+            return;
+        }
+        lienzo = ScriptableObject.CreateInstance<Lienzo>();
+        lienzo.Constructor(pixel, canvas, Linea);
+        lienzo.Crear_lienzo(16, 9);
+        pincel = Instantiate(pincelPrefab,canvas.transform).GetComponent<Pincel>();
     }
 
     // Update is called once per frame
@@ -195,46 +197,72 @@ public class Lienzo : ScriptableObject
 {
     Canvas canvas;
     GameObject pixel;
+    GameObject linea;
+    public Pixel[,] imagen_ampliada;
     Pixel[,] imagen;
-    public int dimX { get => imagen.GetLength(0); }
-    public int dimY {get=> imagen.GetLength(1);}
+    public int dimX { get => imagen.GetLength(1); }
+    public int dimY {get=> imagen.GetLength(0);}
+    public Vector2 pixelScale;
     public Pixel this[int i, int j]
     {
         get => imagen[i, j];
     }
-    public void Constructor(GameObject pixel, Canvas canvas)
+    public void Constructor(GameObject pixel, Canvas canvas, GameObject linea)
     {
-        this.pixel = pixel;this.canvas = canvas;
+        this.pixel = pixel;this.canvas = canvas;this.linea = linea;
     }
-    public void Crear_lienzo(int i, int j)
+    public void Crear_lienzo(int x, int y)
     {
+        int i = y+1;int j = x+1;
         if (!(imagen is null))
         {
             foreach (var pixel in imagen) Destroy(pixel.gameObject);
         }
-        imagen = new Pixel[i, j];
-        Vector2 tamano_canvas = canvas.GetComponent<RectTransform>().sizeDelta;
+        imagen = new Pixel[y, x];
+        imagen_ampliada = new Pixel[i, j];
+
+        Vector2 tamano_canvas;
+        CanvasScaler canvascaler = canvas.GetComponent<CanvasScaler>();
+        if (canvascaler != null && canvascaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize)
+            tamano_canvas = canvascaler.referenceResolution;
+        else
+            return;
         float tamano_pixel;
 
         if (tamano_canvas.x / tamano_canvas.y > j / i) tamano_pixel = tamano_canvas.x / j;
         else tamano_pixel = tamano_canvas.y / i;
+        Pixel.tamano_pixel = tamano_pixel;
 
-        Vector3 pos_esquina = new Vector3(-tamano_canvas.x / 2 + tamano_pixel / 2, -tamano_canvas.y / 2 + tamano_pixel / 2);
+        pixelScale = new Vector2(tamano_pixel,tamano_pixel);
 
-        for (int x = 0; x < i; x++)
+        Vector3 pos_esquina = new Vector3(  (-j+1)*tamano_pixel / 2,   (i-1)*tamano_pixel / 2);
+
+        for (int a = 0; a < i; a++)
         {
-            for (int y = 0; y < j; y++)
+            for (int b = 0; b < j; b++)
             {
-                var pixelGameObject = Instantiate(pixel, pos_esquina + new Vector3(y * tamano_pixel, x * tamano_pixel, 0), Quaternion.identity, parent: canvas.transform);
-                // Cambiar el tamaño del GameObject pixel (UI)
-                RectTransform rt = pixelGameObject.GetComponent<RectTransform>();
-                if (rt != null)
+                if (a == 0 || b == 0)
                 {
-                    rt.sizeDelta = new Vector2(tamano_pixel, tamano_pixel);
-                }
+                    if (!(a == 0 && b == 0))
+                    {
+                        GameObject pixelGameObject = Instantiate(linea, canvas.transform);
+                        pixelGameObject.transform.localPosition = pos_esquina + new Vector3(b * tamano_pixel, -a * tamano_pixel, 0);
+                        pixelGameObject.transform.localScale = pixelScale;
 
-                imagen[x, y] = pixelGameObject.GetComponent<Pixel>();
-                imagen[x, y].pos_tablero = (x, y);
+                        imagen_ampliada[a, b] = pixelGameObject.GetComponent<Pixel>();
+                        imagen_ampliada[a, b].NumeroLinea = a == 0 ? b - 1 : a - 1;
+                    }
+                }
+                    else
+                    {
+                        GameObject pixelGameObject = Instantiate(pixel, canvas.transform);
+                        pixelGameObject.transform.localPosition = pos_esquina + new Vector3(b * tamano_pixel, -a * tamano_pixel, 0);
+                        pixelGameObject.transform.localScale = pixelScale;
+
+                        imagen_ampliada[a, b] = pixelGameObject.GetComponent<Pixel>();
+                        imagen[a - 1, b - 1] = imagen_ampliada[a, b];
+                        imagen[a - 1, b - 1].pos_tablero = (a - 1, b - 1);
+                    }
             }
         }
     }

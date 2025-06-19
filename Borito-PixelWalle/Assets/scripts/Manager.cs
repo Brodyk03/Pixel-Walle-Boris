@@ -49,55 +49,52 @@ public class Manager : MonoBehaviour
     }
     public static void DrawCircle(int dirX, int dirY, int radius)
     {
-        int aprox = 0;
         double ratio;
         (int, int) centro = (pincel.Pos_tablero.Item1 + (radius * dirY),
                             pincel.Pos_tablero.Item2 + (radius * dirX));
-        if (centro.Item1 - radius < 0 || centro.Item2 - radius < 0
-        || centro.Item1 + radius > lienzo.dimX || centro.Item2 + radius > lienzo.dimY)
-        {
-            Debug.LogError("No se pude pintar el circulo porque se sale de los limites de la pantalla");
-            return;
-        }
-        if (!(dirX == 0 || dirY == 0))
-        {
-            ratio = Math.Sqrt(2) * (double)radius;
-            aprox = 1;
-        }
+        // if (centro.Item1 - radius < 0 || centro.Item2 - radius < 0
+        // || centro.Item1 + radius > lienzo.dimX || centro.Item2 + radius > lienzo.dimY)
+        // {
+        //     Debug.LogError("No se pude pintar el circulo porque se sale de los limites de la pantalla");
+        //     return;
+        // }
+        if (!(dirX == 0 || dirY == 0))ratio = Math.Sqrt(2) * (double)radius;
         else ratio = radius;
-        Pixel[,] cuadrado = new Pixel[((int)Math.Abs(ratio) + aprox) * 2, ((int)Math.Abs(ratio) + aprox) * 2];
-        (int, int) Posicion = (centro.Item1 - (cuadrado.GetLength(0) / 2), centro.Item2 - (cuadrado.GetLength(0) / 2));
-        (int, int) Otro_Centro = (cuadrado.GetLength(0) / 2, cuadrado.GetLength(0) / 2);
-        (int, int) Transformacion = (centro.Item1 - Otro_Centro.Item1, centro.Item2 - Otro_Centro.Item2);
-        for (int i = 0; i < cuadrado.GetLength(0); i++)
-        {
-            for (int j = 0; j < cuadrado.GetLength(1); j++)
-            {
-                cuadrado[i, j] = lienzo[Posicion.Item1 + i, Posicion.Item2 + j];
-            }
-        }
-        (int, int) Verificar = (Otro_Centro.Item1, 0);
-        Posicion = Verificar;
+
+        (int, int) Posicion = pincel.Pos_tablero;//(centro.Item1, centro.Item2-Convert.ToInt32(ratio));
+        (int, int) Verificar = Posicion;
         (int, int) Trance = Posicion;
         List<(int, int)> pintar = new List<(int, int)>();
+        List<(int, int)> direccion_decision;
+
+        int i;
+        for ( i = 0; i < direcciones.Count && !(direcciones[i].Item1 == dirY)
+                && !(direcciones[i].Item2 == dirX); i++) ;
+        (int, int) direccion = direcciones[i<2?i+6:i-2]; // Direccion inicial
+        int numeroD;
+
         do
         {
+            numeroD = direcciones.IndexOf(direccion);
+            direccion_decision = new List<(int, int)>() { direcciones[numeroD == 0 ? 7 : numeroD - 1], direcciones[numeroD], direcciones[numeroD == 7 ? 0 : numeroD + 1] };
             double menor = int.MaxValue;
-            foreach (var item in direcciones)
+            foreach (var item in direccion_decision)
             {
-                double distancia = Math.Pow(Otro_Centro.Item1 - Posicion.Item1 + item.Item1, 2) +
-                                    Math.Pow(Otro_Centro.Item2 - Posicion.Item2 + item.Item2, 2);
-                distancia = Math.Abs(distancia - ratio);
+                double distancia = Math.Pow(centro.Item1 - Posicion.Item1 + item.Item1, 2) +
+                        Math.Pow(centro.Item2 - Posicion.Item2 + item.Item2, 2);
+                distancia = Math.Abs(distancia - Math.Pow(ratio, 2));
+
                 if (distancia < menor)
                 {
+                    direccion = item;
                     menor = distancia;
                     Trance = (Posicion.Item1 + item.Item1, Posicion.Item2 + item.Item2);
                 }
             }
+
             Posicion = Trance;
-            (int, int) agregar = (Trance.Item1 + Transformacion.Item1,
-                                Trance.Item2 + Transformacion.Item2);
-            pintar.Add(agregar);
+            pintar.Add(Trance);
+
         } while (Verificar == Posicion);
         foreach (var item in pintar)
         {
@@ -114,12 +111,12 @@ public class Manager : MonoBehaviour
         byte direccion = 0;
         int x = 0;
         int y = 0;
-        if (posicion.Item1 < 0 || posicion.Item2 < 0 || centro.Item1 + (height - 1) > lienzo.dimX ||
-         centro.Item2 - (width - 1) > lienzo.dimY)
-        {
-            Debug.LogError("No se pude pintar el rectangulo porque se sale de los limites de la pantalla");
-            return;
-        }
+        // if (posicion.Item1 < 0 || posicion.Item2 < 0 || centro.Item1 + (height - 1) > lienzo.dimX ||
+        //  centro.Item2 - (width - 1) > lienzo.dimY)
+        // {
+        //     Debug.LogError("No se pude pintar el rectangulo porque se sale de los limites de la pantalla");
+        //     return;
+        // }
         do
         {
             pincel.Pos_tablero = (posicion.Item1 + direcciones[direccion * 2].Item1,

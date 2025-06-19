@@ -7,7 +7,17 @@ using UnityEngine;
 
 public class Pincel : MonoBehaviour
 {
-    Pixel pixel { get => Manager.lienzo[Pos_tablero.Item1, Pos_tablero.Item2]; }
+    Pixel pixel
+    {
+        get
+        {
+            if (Pos_tablero.Item1 < 0 || Pos_tablero.Item1 >= Manager.lienzo.dimY ||
+                Pos_tablero.Item2 < 0 || Pos_tablero.Item2 >= Manager.lienzo.dimX)
+                return null;
+            else return Manager.lienzo[Pos_tablero.Item1, Pos_tablero.Item2];
+        }
+        
+    }
     private (int, int) pos_tablero;
     private float tamano_pincel;
     private Material material;
@@ -181,7 +191,6 @@ public class Pincel : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void pintar()
     {
-
         if (pixel != null)
         {
             if (this.color!=Manager.color.Transparent)
@@ -189,10 +198,6 @@ public class Pincel : MonoBehaviour
                 pixel.color = this.Color;
                 pixel.gameObject.GetComponent<Renderer>().material = material;
             }
-        }
-        else
-        {
-            Debug.LogError("Pixel no encontrado en la posicion: " + Pos_tablero);
         }
     }
     public void Pintar()
